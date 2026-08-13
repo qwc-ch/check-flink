@@ -1,0 +1,84 @@
+# CNB (cnb.cool) 流水线配置
+# 用国内 IP 检测友链（GitHub Actions 海外 IP 会被部分站点屏蔽）
+# 检测结果通过 vercel CLI 部署到 Vercel 托管
+#
+# 需要配置的密钥（通过密钥仓库 envs.yml imports 注入）：
+#   VERCEL_TOKEN   Vercel API Token
+#   IMG_UPLOAD_URL https://tu.520781.xyz/upload
+#   IMG_AUTH_CODE  图床 Token
+#   IMG_UPLOAD_FOLDER screenshot
+#   SOURCE_URL     https://blog.amamo.top/api/friends.json
+#   AUTHOR_URL     blog.amamo.top
+
+main:
+  # 每天 2 次：仅状态检测（轻量，requests）
+  "crontab: 0 1,13 * * *":
+    - name: 检测友链状态
+      imports:
+        - https://cnb.cool/<你的用户名>/<密钥仓库名>/-/blob/main/envs.yml
+      env:
+        SOURCE_URL: https://blog.amamo.top/api/friends.json
+        AUTHOR_URL: blog.amamo.top
+        IMG_UPLOAD_URL: https://tu.520781.xyz/upload
+        IMG_UPLOAD_FOLDER: screenshot
+      stages:
+        - name: 安装依赖
+          image: python:3.12
+          script: |
+            pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+        - name: 拉取历史 result.json（从 Vercel，保 siteshot）
+          image: python:3.12
+          script: |
+            curl -sL -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            head -c 200 result.json
+        - name: 运行检测
+          image: python:3.12
+          script: |
+            python main.py
+            python check_siteshot.py ./result.json
+        - name: 部署到 Vercel
+          image: node:22
+          script: |
+            cp -f result.json static/
+            cd static
+            npx -y vercel@57 deploy --prod --yes --token "$VERCEL_TOKEN" --name check-flink
+            cd ..
+
+  # 每 6 天：状态检测 + 截图（Selenium + Chrome）
+  "crontab: 30 1 1,7,13,19,25 * *":
+    - name: 友链状态检测 + 主页截图
+      imports:
+        - https://cnb.cool/<你的用户名>/<密钥仓库名>/-/blob/main/envs.yml
+      env:
+        SOURCE_URL: https://blog.amamo.top/api/friends.json
+        AUTHOR_URL: blog.amamo.top
+        IMG_UPLOAD_URL: https://tu.520781.xyz/upload
+        IMG_UPLOAD_FOLDER: screenshot
+        CHROME_BIN: /usr/bin/chromium
+        CHROME_DRIVER_PATH: /usr/bin/chromedriver
+      stages:
+        - name: 安装依赖 + Chrome
+          image: python:3.12
+          script: |
+            apt-get update -qq
+            apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
+            pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+            chromedriver --version || /usr/bin/chromedriver --version || true
+        - name: 拉取历史 result.json（从 Vercel，保 siteshot）
+          image: python:3.12
+          script: |
+            curl -sL -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            head -c 200 result.json
+        - name: 运行检测 + 截图
+          image: python:3.12
+          script: |
+            python main.py
+            python screenshot_runner.py
+            python check_siteshot.py ./result.json
+        - name: 部署到 Vercel
+          image: node:22
+          script: |
+            cp -f result.json static/
+            cd static
+            npx -y vercel@57 deploy --prod --yes --token "$VERCEL_TOKEN" --name check-flink
+            cd ..

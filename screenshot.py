@@ -182,7 +182,12 @@ def _take_screenshot_with_selenium(url: str, host: str) -> Optional[bytes]:
 
     driver = None
     try:
-        service = Service(ChromeDriverManager().install())
+        # 优先使用系统 chromedriver（CNB/CI 环境），否则才走 ChromeDriverManager 下载
+        driver_path = os.getenv("CHROME_DRIVER_PATH", "")
+        if driver_path and os.path.exists(driver_path):
+            service = Service(executable_path=driver_path)
+        else:
+            service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(30)
         logger.info(f"[selenium] 访问 {url} ...")
