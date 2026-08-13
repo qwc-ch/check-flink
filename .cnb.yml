@@ -17,6 +17,7 @@ main:
         - name: 检测 + 增量截图
           image: python:3.12
           script: |
+            sed -i 's|deb.debian.org|mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources
             apt-get update -qq
             apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
             pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
@@ -77,6 +78,7 @@ main:
         - name: 检测 + 截图
           image: python:3.12
           script: |
+            sed -i 's|deb.debian.org|mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources
             apt-get update -qq
             apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
             pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
