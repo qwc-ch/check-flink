@@ -25,7 +25,7 @@ main:
         - name: 安装依赖
           image: python:3.12
           script: |
-            pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+            pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
           script: |
@@ -58,7 +58,7 @@ main:
         - name: 安装依赖
           image: python:3.12
           script: |
-            pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+            pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
           script: |
@@ -95,7 +95,7 @@ main:
           script: |
             apt-get update -qq
             apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
-            pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+            pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
             chromedriver --version || /usr/bin/chromedriver --version || true
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
