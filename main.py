@@ -12,6 +12,13 @@ from urllib.parse import urlparse
 import concurrent.futures
 from typing import Optional, Tuple, Any
 
+# 加载 .env（GitHub Actions 中通过 secrets 注入环境变量，无 .env 时自动跳过）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # 地域屏蔽诊断模块
 from geo_diagnose import diagnose_access_failure
 
@@ -50,9 +57,9 @@ RAW_HEADERS = {  # 仅用于获取原始数据，防止接收到Accept-Language�
 }
 
 PROXY_URL_TEMPLATE = f"{os.getenv('PROXY_URL')}{{}}" if os.getenv("PROXY_URL") else None
-SOURCE_URL = os.getenv("SOURCE_URL", "https://blog.liushen.fun/flink_count.json")  # 默认本地文件
+SOURCE_URL = os.getenv("SOURCE_URL", "https://blog.amamo.top/api/friends.json")  # 默认本地文件
 RESULT_FILE = "./result.json"
-AUTHOR_URL = os.getenv("AUTHOR_URL", "blog.liushen.fun")  # 作者URL，用于检测反链
+AUTHOR_URL = os.getenv("AUTHOR_URL", "blog.amamo.top")  # 作者URL，用于检测反链
 
 # TARGET_LINK 支持 "," 或 "|" 分隔多目标，支持精确/子串匹配
 _RAW_TARGET = os.getenv("TARGET_LINK", "").strip()

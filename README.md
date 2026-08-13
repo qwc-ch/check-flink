@@ -6,7 +6,7 @@
 
 自动检测博客友链可达性 + 自动截取友链主页，一站式部署。
 
-![示例](https://raw.githubusercontent.com/fqzlr/check-flink/main/static/pic-doc/show.png)
+![示例](https://raw.githubusercontent.com/qwc-ch/check-flink/main/static/pic-doc/show.png)
 
 ---
 
@@ -153,9 +153,9 @@ requests==2.32.3
 新增 3 个截图相关环境变量：
 
 ```env
-IMG_UPLOAD_URL=https://tu.fqzlr.com/upload
+IMG_UPLOAD_URL=https://tu.520781.xyz/upload
 IMG_AUTH_CODE=
-IMG_UPLOAD_FOLDER=youlian
+IMG_UPLOAD_FOLDER=screenshot
 ```
 
 ---
@@ -213,7 +213,7 @@ check-flink/
 
 ### Step 1 · Fork 仓库
 
-1. 访问 [github.com/fqzlr/check-flink](https://github.com/fqzlr/check-flink)
+1. 访问 [github.com/qwc-ch/check-flink](https://github.com/qwc-ch/check-flink)
 2. 点击右上角 **Fork** 按钮
 3. 仓库名可自定义（如 `check-flink`、`friend-monitor`）
 4. ⚠️ **不要勾选** "Copy the main branch only"，因为我们要用 `page` 分支托管
@@ -221,7 +221,7 @@ check-flink/
 或者用命令行：
 
 ```bash
-git clone https://github.com/fqzlr/check-flink.git
+git clone https://github.com/qwc-ch/check-flink.git
 cd check-flink
 git remote set-url origin https://github.com/<你的用户名>/<仓库名>.git
 git push -u origin main
@@ -235,17 +235,17 @@ git push -u origin main
 
 | Secret 名称 | 值 | 说明 |
 |------------|----|------|
-| `SOURCE_URL` | `https://你的博客.com/friends.json` | 友链数据源 URL（详见 Step 4） |
-| `AUTHOR_URL` | `fqzlr.com` | 你的博客域名（用于反链检测） |
-| `IMG_UPLOAD_URL` | `https://tu.fqzlr.com/upload` | 图床上传端点（cfbed.sanyue.de 兼容） |
-| `IMG_AUTH_CODE` | （从图床后台获取） | 上传认证码 |
+| `SOURCE_URL` | `https://blog.amamo.top/api/friends.json` | 友链数据源 URL（详见 Step 4） |
+| `AUTHOR_URL` | `blog.amamo.top` | 你的博客域名（用于反链检测） |
+| `IMG_UPLOAD_URL` | `https://tu.520781.xyz/upload` | 图床上传端点（CloudFlare ImgBed 兼容） |
+| `IMG_AUTH_CODE` | （从图床后台获取） | 上传认证 Token（imgbed_ 前缀） |
 
 #### 可选项
 
 | Secret 名称 | 值 | 说明 |
 |------------|----|------|
 | `PROXY_URL` | `https://nginx.example.com/` | CloudFlare Worker 代理（提升准确率） |
-| `IMG_UPLOAD_FOLDER` | `youlian` | 上传目录，默认 `youlian` |
+| `IMG_UPLOAD_FOLDER` | `screenshot` | 上传目录，默认 `youlian` |
 
 #### 添加截图（参考）
 
@@ -255,7 +255,7 @@ Settings → Secrets and variables → Actions
 New repository secret
   ↓
 Name: IMG_UPLOAD_URL
-Secret: https://tu.fqzlr.com/upload
+Secret: https://tu.520781.xyz/upload
   ↓
 Add secret
 ```
@@ -276,57 +276,59 @@ Add secret
 
 #### 方案 A：JSON 端点（**推荐**）
 
-在博客侧新增一个 Astro 端点（如 `src/pages/friends.json.ts`）：
+在博客侧新增一个 Astro 端点（如 `src/pages/api/friends.json.ts`）：
 
 ```ts
+import { friendsConfig } from "@/config";
 import type { APIRoute } from "astro";
-import { getEnabledFriends } from "@/config/friendsConfig";
 
 /**
  * 友链数据 JSON 端点
  * 供 check-flink 仓库读取，自动维护友链列表
  *
- * 访问地址：https://fqzlr.com/friends.json
+ * 访问地址：https://blog.amamo.top/api/friends.json
  * 输出格式：与 check-flink 兼容的标准 JSON
  */
 export const GET: APIRoute = () => {
-  const friends = getEnabledFriends();
-  const linkList = friends.map((f) => ({
-    name: f.title,
-    link: f.siteurl.trim(),         // 去首尾空格，避免匹配失败
-    avatar: f.imgurl,
-    descr: f.desc,
-    siteshot: "",                   // 留空，由 check-flink 填充
-    linkpage: f.linkpage?.trim() || "",  // 可选：友链页面 URL，用于反链检测
-  }));
+	const linkList = friendsConfig
+		.filter((f) => f.enabled)
+		.map((f) => ({
+			name: f.title,
+			link: f.siteurl.trim(),         // 去首尾空格，避免匹配失败
+			avatar: f.imgurl,
+			descr: f.desc,
+			siteshot: "",                   // 留空，由 check-flink 填充
+			linkpage: f.linkpage?.trim() || "",  // 可选：友链页面 URL，用于反链检测
+		}));
 
-  return new Response(
-    JSON.stringify({
-      link_list: linkList,
-      length: linkList.length,
-    }),
-    {
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        // 5 分钟缓存（浏览器 + CDN），check-flink 每 12 小时跑一次，远小于此间隔
-        "Cache-Control": "public, max-age=300, s-maxage=300",
-      },
-    },
-  );
+	return new Response(
+		JSON.stringify({
+			link_list: linkList,
+			length: linkList.length,
+		}),
+		{
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				// 5 分钟缓存（浏览器 + CDN），check-flink 每 12 小时跑一次，远小于此间隔
+				"Cache-Control": "public, max-age=300, s-maxage=300",
+			},
+		},
+	);
 };
 ```
 
 > 💡 建议把"过滤友链"的逻辑封装在 `friendsConfig.ts` 的 `getEnabledFriends()` 中，端点只负责序列化。这样以后筛选规则（如按 tag、weight、排序）变化时不用动这个文件。
 
-部署后访问 `https://你的博客.com/friends.json`，应返回上述结构。
+部署后访问 `https://blog.amamo.top/api/friends.json`，应返回上述结构。
 
 #### 方案 B：CSV 文件（简单）
 
 在仓库根目录创建 `link.csv`（完整友链配置）：
 
 ```csv
-番茄主理人,https://fqzlr.com/
-MmzMing的知识库,https://tblog.mmzhiku.xyz/
+夏夜流萤,https://blog.cuteleaf.cn/
+fqzlr,https://fqzlr.com/
+年华,https://blog.amamo.top/
 团子和蛋糕,https://blog.tsh520.cn/
 Olinl Blog,https://blog.olinl.com/
 夏夜流萤,https://blog.cuteleaf.cn/
@@ -473,16 +475,16 @@ curl https://check-flink-xxx.vercel.app/result.json | head -50
     "inaccessible_count": 4,
     "total_count": 47,
     "has_author_link_count": 12,
-    "author_url": "fqzlr.com",
+    "author_url": "blog.amamo.top",
     "link_status": [
         {
-            "name": "番茄主理人",
-            "link": "https://fqzlr.com/",
+            "name": "年华",
+            "link": "https://blog.amamo.top/",
             "latency": 0.25,
             "fail_count": 0,
             "has_author_link": true,
             "linkpage": "",
-            "siteshot": "https://tu.fqzlr.com/youlian/fqzlr.com.png"
+            "siteshot": "https://tu.520781.xyz/screenshot/blog.amamo.top.png"
         }
     ]
 }
@@ -856,16 +858,16 @@ A：查看 result.json 中的 `siteshot` 字段，或运行 `python check_sitesh
 
 ```bash
 # 查看差异（JSON 格式输出，适合 CI）
-python friends_watcher.py diff --config ../fqzlr-bk/src/config/friendsConfig.ts --json
+python friends_watcher.py diff --config ../Firefly/src/config/friendsConfig.ts --json
 
 # 执行增量检测 + 截图
-python friends_watcher.py run --config ../fqzlr-bk/src/config/friendsConfig.ts
+python friends_watcher.py run --config ../Firefly/src/config/friendsConfig.ts
 
 # 只执行检测，不截图
-python friends_watcher.py run --config ../fqzlr-bk/src/config/friendsConfig.ts --skip-screenshot
+python friends_watcher.py run --config ../Firefly/src/config/friendsConfig.ts --skip-screenshot
 
 # 常驻监听（轮询间隔 30s，变更后 5s 防抖）
-python friends_watcher.py watch --config ../fqzlr-bk/src/config/friendsConfig.ts --interval 30
+python friends_watcher.py watch --config ../Firefly/src/config/friendsConfig.ts --interval 30
 ```
 
 ### 增量检测逻辑
@@ -954,7 +956,7 @@ Secret: myfriends   # 截图会存到 tu.xxx.com/myfriends/
 }
 ```
 
-并在 Secrets 中设置 `AUTHOR_URL=fqzlr.com`（你的博客域名）。
+并在 Secrets 中设置 `AUTHOR_URL=blog.amamo.top`（你的博客域名）。
 
 > 🔍 检测逻辑：抓取友链页面（`linkpage`，留空回退首页），用正则提取所有真实 `<a href>` 链接并精确比对主机名（兼容 `www`、协议相对、带路径、大小写）；**仅纯文本出现域名不计为反链**，避免误报。
 
@@ -1236,14 +1238,14 @@ type result.json | python check_page.py
 python geo_diagnose.py https://example.com
 
 # friendsConfig.ts 变更对比（查看差异）
-python friends_watcher.py diff --config ../fqzlr-bk/src/config/friendsConfig.ts --json
+python friends_watcher.py diff --config ../Firefly/src/config/friendsConfig.ts --json
 ```
 
 ---
 
 ## 📄 License
 
-继承原项目 License：[MIT](https://github.com/fqzlr/check-flink/blob/main/LICENSE)
+继承原项目 License：[MIT](https://github.com/qwc-ch/check-flink/blob/main/LICENSE)
 
 ---
 

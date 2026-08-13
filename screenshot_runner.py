@@ -17,6 +17,13 @@ import logging
 import concurrent.futures
 from urllib.parse import urlparse
 
+# 加载 .env（GitHub Actions 中通过 secrets 注入环境变量，无 .env 时自动跳过）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from screenshot import take_screenshot
 
 logging.basicConfig(

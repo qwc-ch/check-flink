@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 screenshot.py - 友链主页截图 + 上传图床
-移植自 thun888/Python-WebSite-Screenshot，适配 fqzlr 友链系统
+移植自 thun888/Python-WebSite-Screenshot，适配友链系统
 
 环境变量：
-- IMG_UPLOAD_URL：图床上传端点（默认 https://tu.fqzlr.com/upload）
+- IMG_UPLOAD_URL：图床上传端点（默认 https://tu.example.com/upload）
 - IMG_AUTH_CODE：上传认证码（可选）
 - IMG_UPLOAD_FOLDER：上传目录（默认 youlian）
 """
@@ -19,6 +19,13 @@ import requests
 from urllib.parse import urlparse
 from typing import Optional
 
+# 加载 .env（GitHub Actions 中通过 secrets 注入环境变量，无 .env 时自动跳过）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.setLevel(logging.INFO)
@@ -29,8 +36,8 @@ WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 800
 PAGE_LOAD_WAIT = 3  # 页面渲染等待时间（秒）
 
-# 图床配置
-IMG_UPLOAD_URL = os.getenv("IMG_UPLOAD_URL", "https://tu.fqzlr.com/upload")
+# 图床配置（GitHub Action 中通过 secrets 注入）
+IMG_UPLOAD_URL = os.getenv("IMG_UPLOAD_URL", "https://tu.example.com/upload")
 IMG_AUTH_CODE = os.getenv("IMG_AUTH_CODE", "")
 IMG_UPLOAD_FOLDER = os.getenv("IMG_UPLOAD_FOLDER", "youlian")
 
