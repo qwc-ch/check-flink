@@ -14,12 +14,22 @@ main:
         IMG_UPLOAD_URL: https://tu.520781.xyz/upload
         IMG_UPLOAD_FOLDER: screenshot
       stages:
-        - name: 检测
+        - name: 检测 + 增量截图
           image: python:3.12
           script: |
+            apt-get update -qq
+            apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
             pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
-            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check.520781.xyz/result.json" || echo "{}" > result.json
             python main.py
+            curl -sL --max-time 20 -o friends.latest.json "$SOURCE_URL"
+            DETECTED=$(python friends_watcher.py compare --current friends.latest.json --historical result.json 2>/dev/null || true)
+            if [ -n "$DETECTED" ]; then
+              echo "检测到变更: $DETECTED"
+              TARGET_LINK="$DETECTED" python screenshot_runner.py
+            else
+              echo "无友链变更，跳过增量截图"
+            fi
         - name: 部署到 Vercel
           image: node:22
           script: |
@@ -42,7 +52,7 @@ main:
           image: python:3.12
           script: |
             pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
-            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check.520781.xyz/result.json" || echo "{}" > result.json
             python main.py
         - name: 部署到 Vercel
           image: node:22
@@ -70,7 +80,7 @@ main:
             apt-get update -qq
             apt-get install -y -qq chromium chromium-driver fonts-wqy-microhei fonts-wqy-zenhei
             pip install -q -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple
-            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check.520781.xyz/result.json" || echo "{}" > result.json
             python main.py
             python screenshot_runner.py
         - name: 部署到 Vercel
