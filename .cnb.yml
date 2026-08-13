@@ -15,7 +15,7 @@ main:
   "crontab: 0 1,13 * * *":
     - name: 检测友链状态
       imports:
-        - https://cnb.cool/<你的用户名>/<密钥仓库名>/-/blob/main/envs.yml
+        - https://cnb.cool/qwc-ch/my-secrets/-/blob/main/envs.yml
       env:
         SOURCE_URL: https://blog.amamo.top/api/friends.json
         AUTHOR_URL: blog.amamo.top
@@ -48,7 +48,7 @@ main:
   "crontab: 30 1 1,7,13,19,25 * *":
     - name: 友链状态检测 + 主页截图
       imports:
-        - https://cnb.cool/<你的用户名>/<密钥仓库名>/-/blob/main/envs.yml
+        - https://cnb.cool/qwc-ch/my-secrets/-/blob/main/envs.yml
       env:
         SOURCE_URL: https://blog.amamo.top/api/friends.json
         AUTHOR_URL: blog.amamo.top
