@@ -25,11 +25,23 @@ main:
             python main.py
             curl -sL --max-time 20 -o friends.latest.json "$SOURCE_URL"
             DETECTED=$(python friends_watcher.py compare --current friends.latest.json --historical result.json 2>/dev/null || true)
+            EMPTY_SHOT=$(python3 -c "
+import json
+try:
+    d = json.load(open('result.json'))
+    links = [e.get('link','') for e in d.get('link_status',[]) if e.get('latency',-1) > 0 and not (e.get('siteshot') or '').strip()]
+    print(','.join(links))
+except Exception:
+    pass
+")
             if [ -n "$DETECTED" ]; then
               echo "检测到变更: $DETECTED"
               TARGET_LINK="$DETECTED" python screenshot_runner.py
+            elif [ -n "$EMPTY_SHOT" ]; then
+              echo "补齐无截图友链: $EMPTY_SHOT"
+              TARGET_LINK="$EMPTY_SHOT" python screenshot_runner.py
             else
-              echo "无友链变更，跳过增量截图"
+              echo "无变更且截图齐全，跳过截图"
             fi
         - name: 部署到 Vercel
           image: node:22
