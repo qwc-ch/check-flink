@@ -13,6 +13,8 @@ main:
         AUTHOR_URL: blog.amamo.top
         IMG_UPLOAD_URL: https://tu.520781.xyz/upload
         IMG_UPLOAD_FOLDER: screenshot
+        CHROME_BIN: /usr/bin/chromium
+        CHROME_DRIVER_PATH: /usr/bin/chromedriver
       stages:
         - name: 检测 + 增量截图
           image: python:3.12
