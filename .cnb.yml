@@ -29,7 +29,7 @@ main:
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
           script: |
-            curl -sL -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
             head -c 200 result.json
         - name: 运行检测
           image: python:3.12
@@ -62,7 +62,7 @@ main:
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
           script: |
-            curl -sL -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
             head -c 200 result.json
         - name: 运行检测
           image: python:3.12
@@ -100,7 +100,7 @@ main:
         - name: 拉取历史 result.json（从 Vercel，保 siteshot）
           image: python:3.12
           script: |
-            curl -sL -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
+            curl -sL --max-time 20 -o result.json "https://check-flink.vercel.app/result.json" || echo "{}" > result.json
             head -c 200 result.json
         - name: 运行检测 + 截图
           image: python:3.12
